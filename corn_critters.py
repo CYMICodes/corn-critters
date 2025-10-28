@@ -16,7 +16,7 @@ from typing import Dict, List
 import math
 from collections import deque
 
-st.set_page_config(page_title="Corn & Critters — Simple (Market + VP)", layout="wide")
+st.set_page_config(page_title="Corn & Critters", layout="wide")
 
 # ---------- Data model ----------
 @dataclass
@@ -688,4 +688,5 @@ if st.session_state.history:
 
     st.dataframe(hist_df.style.apply(highlight_hist, axis=1), width="stretch")
 else:
+
     st.info("No history yet — click 'Run Night' to log a turn.")
