@@ -31,7 +31,7 @@ DEFAULT_ANIMALS: List[Animal] = [
     Animal("Pig",      2,  9),
     Animal("Cow",      2, 12),
     Animal("Bison",    7, 40),   # Updated: mid-tier exotic (7 feed, 40 cost)
-    Animal("Elephant",10, 50),   # high-tier exotic
+    Animal("Elephant",10, 60),   # high-tier exotic
 ]
 
 # ---------- Default game config (session-driven) ----------
@@ -690,3 +690,4 @@ if st.session_state.history:
 else:
 
     st.info("No history yet — click 'Run Night' to log a turn.")
+
