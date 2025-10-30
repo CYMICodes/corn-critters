@@ -31,7 +31,7 @@ DEFAULT_ANIMALS: List[Animal] = [
     Animal("Pig",      2,  9),
     Animal("Cow",      2, 12),
     Animal("Bison",    7, 40),   # Updated: mid-tier exotic (7 feed, 40 cost)
-    Animal("Elephant",10, 55),   # high-tier exotic
+    Animal("Elephant",10, 50),   # high-tier exotic
 ]
 
 # ---------- Default game config (session-driven) ----------
@@ -496,7 +496,7 @@ def get_turn_order(players: List[str], turn_num: int) -> List[str]:
 ordered_players = get_turn_order(st.session_state.players, st.session_state.turn)
 
 # ---------- Per-player panels ----------
-st.subheader(f"Turn {st.session_state.turn}: Manage Players (Turn Order Above)")
+st.subheader(f"Turn {st.session_state.turn}: Manage Players")
 for p in ordered_players:
     with st.expander(f"{p} — click to manage", expanded=False):
         herd = st.session_state.herds[p]
@@ -739,4 +739,5 @@ if st.session_state.history:
     st.dataframe(hist_df.style.apply(highlight_hist, axis=1), width="stretch")
 else:
     st.info("No history yet — click 'Run Night' to log a turn.")
+
 
