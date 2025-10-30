@@ -117,6 +117,60 @@ def calculate_expected_per_turn(num_players: int) -> Dict[str, float]:
 BISON_COOLDOWN = 1       # must wait 1 full turn after spawn before another spawn
 ELEPHANT_COOLDOWN = 2    # must wait 2 full turns after spawn
 
+# ---------- Persistent Storage Functions ----------
+def save_game_state():
+    """Save current game state to browser storage."""
+    try:
+        state_to_save = {
+            "turn": st.session_state.turn,
+            "players": st.session_state.players,
+            "player_color": st.session_state.player_color,
+            "bushels": st.session_state.bushels,
+            "herds": st.session_state.herds,
+            "turn_start_bushels": st.session_state.turn_start_bushels,
+            "turn_start_herd": st.session_state.turn_start_herd,
+            "vp": st.session_state.vp,
+            "turn_start_vp": st.session_state.turn_start_vp,
+            "vp_earned": st.session_state.vp_earned,
+            "history": st.session_state.history,
+            "last_growth_rate": st.session_state.last_growth_rate,
+            "cfg": st.session_state.cfg,
+            "market_supply": st.session_state.market_supply,
+            "market_draw_turn": st.session_state.market_draw_turn,
+            "last_spawn_turn": st.session_state.last_spawn_turn,
+        }
+        # Store in session state with a special key
+        st.session_state._game_backup = state_to_save
+    except Exception as e:
+        # Silent fail - don't break the game if storage fails
+        pass
+
+def load_game_state():
+    """Load saved game state from browser storage."""
+    try:
+        if "_game_backup" in st.session_state and st.session_state._game_backup:
+            saved = st.session_state._game_backup
+            st.session_state.turn = saved.get("turn", 1)
+            st.session_state.players = saved.get("players", [])
+            st.session_state.player_color = saved.get("player_color", {})
+            st.session_state.bushels = saved.get("bushels", {})
+            st.session_state.herds = saved.get("herds", {})
+            st.session_state.turn_start_bushels = saved.get("turn_start_bushels", {})
+            st.session_state.turn_start_herd = saved.get("turn_start_herd", {})
+            st.session_state.vp = saved.get("vp", {})
+            st.session_state.turn_start_vp = saved.get("turn_start_vp", {})
+            st.session_state.vp_earned = saved.get("vp_earned", {})
+            st.session_state.history = saved.get("history", [])
+            st.session_state.last_growth_rate = saved.get("last_growth_rate", None)
+            st.session_state.cfg = saved.get("cfg", DEFAULT_CFG.copy())
+            st.session_state.market_supply = saved.get("market_supply", {})
+            st.session_state.market_draw_turn = saved.get("market_draw_turn", 0)
+            st.session_state.last_spawn_turn = saved.get("last_spawn_turn", {"Bison": -10, "Elephant": -10})
+            return True
+    except Exception:
+        pass
+    return False
+
 # ---------- State reset ----------
 def reset_state():
     st.session_state.turn = 1
@@ -149,10 +203,16 @@ def reset_state():
     
     # cooldown trackers (so we can space appearances)
     st.session_state.last_spawn_turn = {"Bison": -10, "Elephant": -10}
+    
+    # Clear backup
+    st.session_state._game_backup = None
 
 # Initialize
 if "turn" not in st.session_state:
-    reset_state()
+    # Try to load saved game first
+    if not load_game_state():
+        # No saved game, start fresh
+        reset_state()
 if "cfg" not in st.session_state:
     st.session_state.cfg = DEFAULT_CFG.copy()
 
@@ -344,6 +404,9 @@ if not roster_locked:
                 
                 # Force market redraw on next ensure_market_supply() call
                 st.session_state.market_draw_turn = 0
+                
+                # Save state after adding player
+                save_game_state()
                 
                 st.success(f"Added {name}")
                 st.rerun()  # Force rerun to update market display
@@ -660,6 +723,10 @@ with left:
 
         # New turn => fresh market (will rebuild with current player count)
         ensure_market_supply()
+        
+        # Save state after running night
+        save_game_state()
+        
         st.rerun()
 
 with right:
@@ -739,5 +806,3 @@ if st.session_state.history:
     st.dataframe(hist_df.style.apply(highlight_hist, axis=1), width="stretch")
 else:
     st.info("No history yet — click 'Run Night' to log a turn.")
-
-
