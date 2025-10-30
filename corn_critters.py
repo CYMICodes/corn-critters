@@ -434,7 +434,7 @@ def purchase_sales_flow_signed(p: str) -> int:
             total += -delta * unit_cost           # purchase = negative
         elif delta < 0:
             units_sold = -delta
-            refund_per = math.floor(0.7 * unit_cost)  # 70% refund (was 0.6)
+            refund_per = round(0.6 * unit_cost)   # 60% refund, rounded
             total += units_sold * refund_per      # sale = positive
     return int(total)
 
@@ -738,7 +738,4 @@ if st.session_state.history:
 
     st.dataframe(hist_df.style.apply(highlight_hist, axis=1), width="stretch")
 else:
-    st.info("No history yet — click 'Run Night' to log a turn.")
-    
-
-
+    st.info("No history yet — click 'Run Night' to log a turn.")  
