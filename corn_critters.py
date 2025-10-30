@@ -16,7 +16,7 @@ from typing import Dict, List
 import math
 from collections import deque
 
-st.set_page_config(page_title="Corn & Critters", layout="wide")
+st.set_page_config(page_title="Corn & Critters — Simple (Market + VP)", layout="wide")
 
 # ---------- Data model ----------
 @dataclass
@@ -31,16 +31,16 @@ DEFAULT_ANIMALS: List[Animal] = [
     Animal("Pig",      2,  9),
     Animal("Cow",      2, 12),
     Animal("Bison",    7, 40),   # Updated: mid-tier exotic (7 feed, 40 cost)
-    Animal("Elephant",10, 60),   # high-tier exotic
+    Animal("Elephant",10, 50),   # high-tier exotic
 ]
 
 # ---------- Default game config (session-driven) ----------
 DEFAULT_CFG = {
-    "total_turns": 20,
+    "total_turns": 15,
     "mean_growth": 0.10,
     "noise_sd": 0.18,
-    "clip_low": -0.30,
-    "clip_high": 0.60,
+    "clip_low": -0.25,
+    "clip_high": 0.70,
     "rng_seed": 1,
 }
 
@@ -129,7 +129,7 @@ def reset_state():
     st.session_state.turn_start_bushels: Dict[str, int] = {}
     st.session_state.turn_start_herd: Dict[str, Dict[str, int]] = {}
 
-    # Victory Points
+    # Value Points
     st.session_state.vp: Dict[str, int] = {}               # Start-of-turn VP (committed)
     st.session_state.turn_start_vp: Dict[str, int] = {}    # Baseline VP this turn
     st.session_state.vp_earned: Dict[str, int] = {}        # Input per player this turn
@@ -251,6 +251,56 @@ with st.sidebar:
                 st.session_state.confirm_reset = False
                 st.rerun()
 
+# ---------- Check if game is over ----------
+if st.session_state.turn > total_turns:
+    st.balloons()
+    st.success(f"🎉 Game Over! Final scores after {total_turns} turns:")
+    
+    # Calculate final standings
+    final_standings = []
+    for p in st.session_state.players:
+        final_vp = int(st.session_state.vp[p])
+        final_bushels = int(st.session_state.bushels[p])
+        total_animals = sum(int(st.session_state.herds[p].get(a, 0)) for a in animal_names)
+        
+        final_standings.append({
+            "Player": p,
+            "Value Points": final_vp,
+            "Bushels": final_bushels,
+            "Total Animals": total_animals,
+            "Color": st.session_state.player_color[p]
+        })
+    
+    # Sort by VP (desc), then bushels (desc), then animals (desc)
+    final_standings.sort(key=lambda x: (-x["Value Points"], -x["Bushels"], -x["Total Animals"]))
+    
+    # Display winner
+    winner = final_standings[0]
+    st.markdown(f"## 🏆 Winner: {winner['Player']} with {winner['Value Points']} VP!")
+    
+    # Display full standings
+    standings_df = pd.DataFrame(final_standings)
+    
+    def highlight_winner(row):
+        if row["Player"] == winner["Player"]:
+            return ['background-color: gold; font-weight: bold'] * len(row)
+        else:
+            hex_color = row["Color"].lstrip("#")
+            try:
+                r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+            except Exception:
+                r, g, b = (255, 255, 255)
+            rgba = f"background-color: rgba({r},{g},{b},0.3)"
+            return [rgba] * len(row)
+    
+    # Remove Color column from display
+    display_df = standings_df.drop(columns=["Color"])
+    st.dataframe(display_df.style.apply(highlight_winner, axis=1), width="stretch")
+    
+    st.markdown("---")
+    st.info("Game complete! Use '🔄 Reset Game' in the sidebar to play again.")
+    st.stop()  # Stop rendering the rest of the UI
+
 # ---------- Animal Costs (single table) ----------
 st.subheader("Animal Costs")
 costs_view = pd.DataFrame([
@@ -258,7 +308,7 @@ costs_view = pd.DataFrame([
         "Animal": n,
         "Feed/Turn": int(ANIMALS[n]["feed_per_turn"]),
         "Cost (bushels)": int(ANIMALS[n]["cost"]),
-        "Sale Value (60%)": int(math.floor(0.7 * int(ANIMALS[n]["cost"]))),
+        "Sale Value (60%)": int(math.floor(0.6 * int(ANIMALS[n]["cost"]))),
     }
     for n in animal_names
 ])
@@ -384,7 +434,7 @@ def purchase_sales_flow_signed(p: str) -> int:
             total += -delta * unit_cost           # purchase = negative
         elif delta < 0:
             units_sold = -delta
-            refund_per = math.floor(0.6 * unit_cost)
+            refund_per = math.floor(0.7 * unit_cost)  # 70% refund (was 0.6)
             total += units_sold * refund_per      # sale = positive
     return int(total)
 
@@ -515,7 +565,7 @@ for p in ordered_players:
         c3.metric("Feed / Turn", f"{feed}")
         c4.metric("End-of-Turn Bushels (preview)", f"{eot}")
 
-        # ----- Victory Points box (BOTTOM row) -----
+        # ----- Value Points box (BOTTOM row) -----
         st.markdown("---")
         col_vp1, col_vp2, col_vp3 = st.columns(3)
         with col_vp1:
@@ -688,6 +738,7 @@ if st.session_state.history:
 
     st.dataframe(hist_df.style.apply(highlight_hist, axis=1), width="stretch")
 else:
-
     st.info("No history yet — click 'Run Night' to log a turn.")
+    
+
 
