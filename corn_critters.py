@@ -31,7 +31,7 @@ DEFAULT_ANIMALS: List[Animal] = [
     Animal("Pig",      2,  9),
     Animal("Cow",      2, 12),
     Animal("Bison",    7, 40),   # Updated: mid-tier exotic (7 feed, 40 cost)
-    Animal("Elephant",10, 60),   # high-tier exotic
+    Animal("Elephant",10, 50),   # high-tier exotic
 ]
 
 # ---------- Default game config (session-driven) ----------
@@ -434,8 +434,8 @@ def purchase_sales_flow_signed(p: str) -> int:
             total += -delta * unit_cost           # purchase = negative
         elif delta < 0:
             units_sold = -delta
-            refund_per = round(0.6 * unit_cost)   # 60% refund, rounded
-            total += units_sold * refund_per      # sale = positive
+            refund_per = math.floor(0.6 * unit_cost)  # 60% refund, rounded DOWN
+            total += units_sold * refund_per          # sale = positive
     return int(total)
 
 def end_of_turn_bushels_preview(p: str) -> int:
@@ -738,5 +738,4 @@ if st.session_state.history:
 
     st.dataframe(hist_df.style.apply(highlight_hist, axis=1), width="stretch")
 else:
-    st.info("No history yet — click 'Run Night' to log a turn.")  
-
+    st.info("No history yet — click 'Run Night' to log a turn.")
