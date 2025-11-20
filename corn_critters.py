@@ -9,15 +9,6 @@
 # - Market probabilities scale dynamically with player count and deck composition.
 
 
-# ========== MAINTENANCE MODE ==========
-MAINTENANCE_MODE = True  # Change to True to take game offline
-# ======================================
-
-if MAINTENANCE_MODE:
-    st.error("🔧 Corn & Critters is currently offline for maintenance.")
-    st.info("The game will be back soon! Check back later.")
-    st.stop()
-
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -749,4 +740,5 @@ if st.session_state.history:
     st.dataframe(hist_df.style.apply(highlight_hist, axis=1), width="stretch")
 else:
     st.info("No history yet — click 'Run Night' to log a turn.")
+
 
